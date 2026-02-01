@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}품종 요약{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+  <!-- Title -->
+  <div class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight flex items-center gap-2">
+        📊 품종별 평균 종란무게
+      </h1>
+      <p class="text-gray-500 mt-1">
+        스키마: <span class="font-semibold">fms</span> |
+        테이블: <span class="font-semibold">chick_info</span>
+      </p>
+    </div>
+
+    <div class="flex gap-2">
+      <a href="/fms/chick"
+         class="px-3 py-2 rounded-lg border bg-white text-gray-700 hover:bg-gray-50 text-sm">
+        ← 병아리 정보
+      </a>
+      <a href="{{ url_for('index') }}"
+         class="px-3 py-2 rounded-lg border bg-white text-gray-700 hover:bg-gray-50 text-sm">
+        ← 메인
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Table Card -->
+  <div class="bg-white rounded-2xl shadow-sm border mb-6 overflow-hidden">
+    <div class="px-5 py-4 border-b">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        ✅ 품종별 요약 통계
+      </h2>
+      <p class="text-sm text-gray-500 mt-1">평균/최소/최대/마리수 비교</p>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-700">
+          <tr>
+            <th class="py-3 px-4 text-center font-semibold">품종(breeds)</th>
+            <th class="py-3 px-4 text-center font-semibold">평균(AVG)</th>
+            <th class="py-3 px-4 text-center font-semibold">최소(MIN)</th>
+            <th class="py-3 px-4 text-center font-semibold">최대(MAX)</th>
+            <th class="py-3 px-4 text-center font-semibold">총 마리수(COUNT)</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y">
+          {% for row in summary %}
+          <tr class="hover:bg-gray-50">
+            <td class="py-3 px-4 text-center font-semibold text-gray-900">{{ row.breeds }}</td>
+            <td class="py-3 px-4 text-center">{{ row.avg_egg_weight }}</td>
+            <td class="py-3 px-4 text-center">{{ row.min_egg_weight }}</td>
+            <td class="py-3 px-4 text-center">{{ row.max_egg_weight }}</td>
+            <td class="py-3 px-4 text-center">{{ row.total }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Histogram Card -->
+  <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+    <div class="px-5 py-4 border-b">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        📈 egg_weight 분포 히스토그램
+      </h2>
+      <p class="text-sm text-gray-500 mt-1">전체 데이터 종란무게 분포 확인</p>
+    </div>
+
+    <div class="p-5">
+      <div class="bg-gray-50 border rounded-xl p-3 flex justify-center">
+        <img
+          src="{{ url_for('static', filename=hist_img) }}"
+          alt="egg_weight histogram"
+          class="max-w-full h-auto rounded-lg"
+          style="max-height: 420px;"
+        />
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
