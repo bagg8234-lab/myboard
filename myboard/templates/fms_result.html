@@ -5,14 +5,14 @@
 
   <!-- Header -->
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="fw-bold m-0">🐥 병아리 정보</h1>
+    <div>
+      <h1 class="fw-bold m-0" style="font-size: 2.2rem;">🐣 병아리 정보 🐣</h1>
+      <p class="text-muted small mb-0" style="font-size: 1.1rem;">스키마 : fms | 테이블 : chick_info</p>
+    </div>
 
     <div class="d-flex align-items-center gap-2">
-      <span class="badge bg-secondary">총 {{ results|length if results else 0 }}건</span>
-      <button id="resetAllBtn" class="btn btn-outline-secondary btn-sm" type="button">
-        전체 초기화
-      </button>
-      <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">← 메인</a>
+      <span class="badge bg-secondary" style="font-size: 1.1rem;">총 {{ results|length if results else 0 }}건</span>
+      
     </div>
   </div>
 
@@ -26,30 +26,20 @@
             <tr>
               {% for key in results[0].keys() %}
               <th class="text-nowrap position-relative bg-white" data-col-index="{{ loop.index0 }}">
-                <div class="d-flex align-items-center justify-content-between gap-2">
-                  <span class="fw-semibold">{{ key }}</span>
-
-                  <!-- ▼ 필터 버튼 -->
+                <div class="d-flex flex-column align-items-start gap-1">
+                  <span class="fw-semibold" style="font-size: 1.1rem;">{{ key }}</span>
                   <div class="dropdown">
                     <button class="btn btn-sm btn-light border py-0 px-2"
                             type="button"
                             data-bs-toggle="dropdown"
                             data-bs-auto-close="outside"
+                            data-bs-offset="0,5"
                             aria-expanded="false"
                             title="필터">
                       ▼
                     </button>
 
                     <div class="dropdown-menu p-2 shadow-sm" style="min-width: 240px; max-height: 300px; overflow:auto;">
-                      <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="small text-muted">필터 선택</span>
-                        <button class="btn btn-sm btn-link text-decoration-none p-0 clear-filter-btn"
-                                type="button"
-                                data-col-index="{{ loop.index0 }}">
-                          초기화
-                        </button>
-                      </div>
-
                       <div class="filter-box" data-col-index="{{ loop.index0 }}">
                         <!-- JS가 값 목록 채움 -->
                       </div>
@@ -65,11 +55,11 @@
             {% for result in results %}
             <tr>
               {% for value in result.values() %}
-              <td data-col-index="{{ loop.index0 }}" class="bg-white">
+              <td data-col-index="{{ loop.index0 }}" class="bg-white text-center" style="font-size: 1.1rem;">
                 {% if value is none %}
                   <span class="text-muted">-</span>
                 {% else %}
-                  <span class="d-inline-block text-truncate" style="max-width: 260px;" title="{{ value }}">
+                  <span title="{{ value }}">
                     {{ value }}
                   </span>
                 {% endif %}
@@ -95,231 +85,71 @@
 
 {% if results and results|length > 0 %}
 <style>
+  :root {
+    --bg: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --line-strong: #d1d5db;
+    --header-bg: #f8fafc;
+    --header-text: #374151;
+    --chip-bg: #e5e7eb;
+    --chip-text: #374151;
+  }
+
   /* ✅ “표처럼 하얗게” 보이도록 */
   .table-white {
-    background: #ffffff;
+    background: var(--bg);
   }
 
   .table-head-white th {
-    background: #ffffff !important;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--header-bg) !important;
+    color: var(--header-text) !important;
+    border-bottom: 1px solid var(--line-strong) !important;
   }
 
-  /* 줄무늬 없애고 싶으면 이거 쓰면 됨 (원하면 말해줘)
-  .table-white tbody tr:nth-child(odd) td {
-    background: #ffffff !important;
-  }
-  */
-
-  /* hover 느낌 은은하게 */
   .table-white tbody tr:hover td {
-    background: #f8fafc !important;
+    background: #f9fafb !important;
   }
 
   th, td {
     vertical-align: middle;
+    color: var(--text);
+  }
+
+  #resultTable {
+    table-layout: auto;
+    width: max-content;
+    border: 1px solid var(--line-strong);
+  }
+
+  #resultTable th,
+  #resultTable td {
+    border: 1px solid var(--line);
+  }
+
+  .badge.bg-secondary {
+    background: var(--chip-bg) !important;
+    color: var(--chip-text) !important;
   }
 </style>
 
-<script>
-  (function () {
-    const table = document.getElementById("resultTable");
-    const tbody = document.getElementById("tableBody");
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    const resetAllBtn = document.getElementById("resetAllBtn");
+<!-- 헤더 스타일 추가 -->
+<style>
+  .table-head-white th span {
+    color: var(--header-text) !important;
+  }
 
-    // colIndex -> Set(selectedValues)
-    const filters = new Map();
+  .table-head-white th .btn-light {
+    background-color: #f9fafb !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
+  }
 
-    function getUniqueValues(colIndex) {
-      const values = new Set();
-      rows.forEach(row => {
-        const cell = row.querySelector(`td[data-col-index="${colIndex}"]`);
-        if (cell) values.add(cell.innerText.trim());
-      });
-      return Array.from(values).sort();
-    }
-
-    function applyFilters() {
-      rows.forEach(row => {
-        let visible = true;
-
-        for (const [colIndex, selectedSet] of filters.entries()) {
-          const cell = row.querySelector(`td[data-col-index="${colIndex}"]`);
-          const cellValue = cell ? cell.innerText.trim() : "";
-
-          if (!selectedSet.has(cellValue)) {
-            visible = false;
-            break;
-          }
-        }
-
-        row.style.display = visible ? "" : "none";
-      });
-    }
-
-    function handleFilterChange(colIndex) {
-      const box = document.querySelector(`.filter-box[data-col-index="${colIndex}"]`);
-      const checked = Array.from(box.querySelectorAll(".value-check:checked"))
-        .map(x => x.value);
-
-      if (checked.length === 0) {
-        filters.delete(colIndex); // 아무것도 선택 안하면 필터 해제
-      } else {
-        filters.set(colIndex, new Set(checked));
-      }
-
-      applyFilters();
-    }
-
-    function buildFilterUI(colIndex) {
-      const box = document.querySelector(`.filter-box[data-col-index="${colIndex}"]`);
-      if (!box) return;
-
-      const uniqueValues = getUniqueValues(colIndex);
-      box.innerHTML = "";
-
-      // ✅ 전체 선택 토글 체크박스(한번 누르면 선택 / 다시 누르면 해제)
-      const allWrap = document.createElement("div");
-      allWrap.className = "form-check mb-2";
-
-      const allId = `selectAll_${colIndex}`;
-
-      const allChk = document.createElement("input");
-      allChk.className = "form-check-input";
-      allChk.type = "checkbox";
-      allChk.id = allId;
-
-      const allLabel = document.createElement("label");
-      allLabel.className = "form-check-label small fw-semibold";
-      allLabel.setAttribute("for", allId);
-      allLabel.innerText = "전체 선택";
-
-      allWrap.appendChild(allChk);
-      allWrap.appendChild(allLabel);
-      box.appendChild(allWrap);
-
-      const divider = document.createElement("div");
-      divider.className = "border-top mb-2";
-      box.appendChild(divider);
-
-      // 값 체크박스 목록
-      const listWrap = document.createElement("div");
-      box.appendChild(listWrap);
-
-      uniqueValues.forEach(val => {
-        const safeVal = val.replaceAll(" ", "_");
-        const id = `f_${colIndex}_${safeVal}`;
-
-        const wrap = document.createElement("div");
-        wrap.className = "form-check";
-
-        const input = document.createElement("input");
-        input.className = "form-check-input value-check";
-        input.type = "checkbox";
-        input.id = id;
-        input.value = val;
-
-        // 기존 필터 상태 반영
-        if (filters.has(colIndex)) {
-          input.checked = filters.get(colIndex).has(val);
-        } else {
-          input.checked = false;
-        }
-
-        input.addEventListener("change", () => {
-          // 개별 체크 변경 -> 전체선택 체크박스 상태도 갱신
-          updateSelectAllState(colIndex);
-          handleFilterChange(colIndex);
-        });
-
-        const label = document.createElement("label");
-        label.className = "form-check-label small";
-        label.setAttribute("for", id);
-        label.innerText = val;
-
-        wrap.appendChild(input);
-        wrap.appendChild(label);
-        listWrap.appendChild(wrap);
-      });
-
-      // ✅ 전체 선택 체크 상태 초기 세팅
-      updateSelectAllState(colIndex);
-
-      // ✅ 전체 선택 토글 기능
-      allChk.addEventListener("change", () => {
-        const shouldCheck = allChk.checked;
-
-        listWrap.querySelectorAll(".value-check").forEach(chk => {
-          chk.checked = shouldCheck;
-        });
-
-        handleFilterChange(colIndex);
-      });
-    }
-
-    function updateSelectAllState(colIndex) {
-      const box = document.querySelector(`.filter-box[data-col-index="${colIndex}"]`);
-      if (!box) return;
-
-      const allChk = box.querySelector(`#selectAll_${colIndex}`);
-      const valueChecks = Array.from(box.querySelectorAll(".value-check"));
-
-      if (!allChk || valueChecks.length === 0) return;
-
-      const checkedCount = valueChecks.filter(chk => chk.checked).length;
-
-      // ✅ 모두 체크되어 있으면 전체선택 체크 ON
-      // ✅ 하나라도 빠져있으면 OFF
-      allChk.checked = (checkedCount === valueChecks.length);
-    }
-
-    // ✅ 열별 초기화 버튼(기존 유지)
-    document.querySelectorAll(".clear-filter-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const colIndex = btn.dataset.colIndex;
-        filters.delete(colIndex);
-
-        // 드롭다운 UI 안 체크 해제
-        const box = document.querySelector(`.filter-box[data-col-index="${colIndex}"]`);
-        if (box) {
-          box.querySelectorAll("input[type='checkbox']").forEach(chk => chk.checked = false);
-        }
-
-        applyFilters();
-      });
-    });
-
-    // ✅ 전체 초기화(다시 올리기) - 무조건 복구되게 강력하게 처리
-    resetAllBtn.addEventListener("click", () => {
-      filters.clear();
-
-      // 모든 행 다시 보이기
-      rows.forEach(row => {
-        row.style.display = "";
-      });
-
-      // 열려있는 드롭다운 UI 체크박스도 초기화
-      document.querySelectorAll(".filter-box input[type='checkbox']").forEach(chk => {
-        chk.checked = false;
-      });
-
-      // 혹시 남아있는 필터 적용이 있으면 다시 한번 적용(안전장치)
-      applyFilters();
-    });
-
-    // ✅ 드롭다운 열릴 때마다 값 목록 갱신
-    const dropdownButtons = table.querySelectorAll("thead button[data-bs-toggle='dropdown']");
-    dropdownButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const th = btn.closest("th");
-        const colIndex = th.dataset.colIndex;
-        buildFilterUI(colIndex);
-      });
-    });
-
-  })();
-</script>
+  .table-head-white th .btn-light:hover {
+    background-color: var(--header-bg) !important;
+  }
+</style>
 
 {% endif %}
 {% endblock %}
