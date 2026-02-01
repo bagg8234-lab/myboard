@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")  # 서버에서 그래프 저장용
 
-
 # 로컬 환경에서는 .env를 읽고, Azure에서는 패스.
 if os.path.exists('.env'):
     load_dotenv()
