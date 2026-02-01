@@ -7,7 +7,7 @@
   <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
       <h1 class="fw-bold m-0" style="font-size: 2.2rem;">🐣 병아리 정보 🐣</h1>
-      <p class="text-muted small mb-0" style="font-size: 1.1rem;">스키마 : fms | 테이블 : chick_info</p>
+      <p class="text-muted mb-0" style="font-size: 1.1rem;">스키마 : fms | 테이블 : chick_info</p>
     </div>
 
     <div class="d-flex align-items-center gap-2">
@@ -25,21 +25,18 @@
           <thead class="sticky-top table-head-white">
             <tr>
               {% for key in results[0].keys() %}
-              <th class="text-nowrap position-relative bg-white" data-col-index="{{ loop.index0 }}">
+              <th class="position-relative" data-col-index="{{ loop.index0 }}">
                 <div class="d-flex flex-column align-items-start gap-1">
                   <span class="fw-semibold" style="font-size: 1.1rem;">{{ key }}</span>
-                  <div class="dropdown">
-                    <button class="btn btn-sm btn-light border py-0 px-2"
+                  <div class="filter-wrap">
+                    <button class="filter-btn"
                             type="button"
-                            data-bs-toggle="dropdown"
-                            data-bs-auto-close="outside"
-                            data-bs-offset="0,5"
-                            aria-expanded="false"
+                            data-col-index="{{ loop.index0 }}"
                             title="필터">
                       ▼
                     </button>
 
-                    <div class="dropdown-menu p-2 shadow-sm" style="min-width: 240px; max-height: 300px; overflow:auto;">
+                    <div class="filter-popover" data-col-index="{{ loop.index0 }}">
                       <div class="filter-box" data-col-index="{{ loop.index0 }}">
                         <!-- JS가 값 목록 채움 -->
                       </div>
@@ -52,22 +49,33 @@
           </thead>
 
           <tbody id="tableBody">
-            {% for result in results %}
-            <tr>
-              {% for value in result.values() %}
-              <td data-col-index="{{ loop.index0 }}" class="bg-white text-center" style="font-size: 1.1rem;">
-                {% if value is none %}
-                  <span class="text-muted">-</span>
-                {% else %}
-                  <span title="{{ value }}">
-                    {{ value }}
-                  </span>
-                {% endif %}
-              </td>
-              {% endfor %}
-            </tr>
-            {% endfor %}
-          </tbody>
+  {% for result in results %}
+  <tr>
+    {% for key, value in result.items() %}
+    <td data-col-index="{{ loop.index0 }}" class="bg-white text-center" style="font-size: 1.1rem;">
+
+      {% if value is none %}
+        <span class="text-muted">-</span>
+
+      {% elif key == 'gender' %}
+        {% if value == 'M' %}
+          <span class="gender-badge gender-m">수컷</span>
+        {% elif value == 'F' %}
+          <span class="gender-badge gender-f">암컷</span>
+        {% else %}
+          <span class="gender-badge gender-etc">{{ value }}</span>
+        {% endif %}
+
+      {% else %}
+        <span title="{{ value }}">{{ value }}</span>
+      {% endif %}
+
+    </td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</tbody>
+
         </table>
       </div>
       {% else %}
@@ -118,14 +126,44 @@
   }
 
   #resultTable {
-    table-layout: auto;
-    width: max-content;
+    table-layout: fixed !important;
+    width: 100% !important;
     border: 1px solid var(--line-strong);
   }
 
   #resultTable th,
   #resultTable td {
     border: 1px solid var(--line);
+    word-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* ✅ 표 컴팩트하게 */
+  #resultTable th, #resultTable td {
+    padding: 6px 10px !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* ✅ 헤더는 스크롤해도 고정 */
+  #resultTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
+  /* ✅ 첫번째 컬럼(chick_no) 고정 */
+  #resultTable th:first-child,
+  #resultTable td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 6;
+    background: #ffffff;   /* 고정된 칸 배경 흰색 */
+  }
+
+  /* ✅ 첫번째 헤더는 가장 위로 */
+  #resultTable thead th:first-child {
+    z-index: 10;
+    background: #f8fafc;
   }
 
   .badge.bg-secondary {
@@ -149,7 +187,212 @@
   .table-head-white th .btn-light:hover {
     background-color: var(--header-bg) !important;
   }
+
+  .gender-badge{
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 1px solid var(--line);
+  letter-spacing: 0.02em;
+}
+
+.gender-m{
+  background: #dbeafe;   /* 연한 파랑 */
+  color: #1e3a8a;        /* 진한 파랑 */
+  border-color: #bfdbfe;
+}
+
+.gender-f{
+  background: #ffe4e6;   /* 연한 핑크 */
+  color: #9f1239;        /* 진한 핑크 */
+  border-color: #fecdd3;
+}
+
+.gender-etc{
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+/* ✅ 필터 버튼/팝업 Excel 느낌 */
+.filter-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.filter-btn {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.filter-btn:hover {
+  background: #f9fafb;
+}
+
+.filter-popover {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  width: 240px;
+  max-height: 300px;
+  overflow: auto;
+  z-index: 9999;
+  padding: 10px;
+}
+
 </style>
+
+<script>
+  (function () {
+    const table = document.getElementById("resultTable");
+    const tbody = document.getElementById("tableBody");
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+
+    const filters = new Map(); // colIndex -> Set
+
+    function getUniqueValues(colIndex) {
+      const values = new Set();
+      rows.forEach(row => {
+        const cell = row.querySelector(`td[data-col-index="${colIndex}"]`);
+        if (cell) values.add(cell.innerText.trim());
+      });
+      return Array.from(values).sort();
+    }
+
+    function applyFilters() {
+      rows.forEach(row => {
+        let visible = true;
+
+        for (const [colIndex, selectedSet] of filters.entries()) {
+          const cell = row.querySelector(`td[data-col-index="${colIndex}"]`);
+          const cellValue = cell ? cell.innerText.trim() : "";
+          if (!selectedSet.has(cellValue)) {
+            visible = false;
+            break;
+          }
+        }
+
+        row.style.display = visible ? "" : "none";
+      });
+    }
+
+    function updateFilter(colIndex) {
+      const box = document.querySelector(`.filter-box[data-col-index="${colIndex}"]`);
+      const checked = Array.from(box.querySelectorAll(".value-check:checked"))
+        .map(x => x.value);
+
+      if (checked.length === 0) {
+        filters.delete(colIndex);
+      } else {
+        filters.set(colIndex, new Set(checked));
+      }
+
+      applyFilters();
+    }
+
+    function buildFilterUI(colIndex) {
+      const box = document.querySelector(`.filter-box[data-col-index="${colIndex}"]`);
+      if (!box) return;
+
+      const values = getUniqueValues(colIndex);
+      box.innerHTML = "";
+
+      // ✅ 전체 선택 토글
+      const allWrap = document.createElement("div");
+      allWrap.className = "form-check mb-2";
+
+      const allId = `selectAll_${colIndex}`;
+      allWrap.innerHTML = `
+        <input class="form-check-input" type="checkbox" id="${allId}">
+        <label class="form-check-label small fw-semibold" for="${allId}">전체 선택</label>
+      `;
+      box.appendChild(allWrap);
+
+      box.appendChild(document.createElement("hr"));
+
+      const listWrap = document.createElement("div");
+      box.appendChild(listWrap);
+
+      values.forEach(v => {
+        const id = `v_${colIndex}_${v.replaceAll(" ", "_")}`;
+        const checked = filters.has(colIndex) && filters.get(colIndex).has(v);
+
+        const item = document.createElement("div");
+        item.className = "form-check";
+        item.innerHTML = `
+          <input class="form-check-input value-check" type="checkbox" id="${id}" value="${v}" ${checked ? "checked" : ""}>
+          <label class="form-check-label small" for="${id}">${v}</label>
+        `;
+        listWrap.appendChild(item);
+      });
+
+      // 전체 선택 상태 갱신
+      const allChk = document.getElementById(allId);
+      const valueChecks = Array.from(listWrap.querySelectorAll(".value-check"));
+
+      function refreshAllState() {
+        const checkedCount = valueChecks.filter(x => x.checked).length;
+        allChk.checked = (checkedCount === valueChecks.length);
+      }
+
+      refreshAllState();
+
+      // 전체선택 토글
+      allChk.addEventListener("change", () => {
+        valueChecks.forEach(x => x.checked = allChk.checked);
+        updateFilter(colIndex);
+      });
+
+      // 개별 체크 변화
+      valueChecks.forEach(chk => {
+        chk.addEventListener("change", () => {
+          refreshAllState();
+          updateFilter(colIndex);
+        });
+      });
+    }
+
+    // ✅ 팝업 열고 닫기
+    function closeAllPopovers() {
+      document.querySelectorAll(".filter-popover").forEach(p => p.style.display = "none");
+    }
+
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        const colIndex = btn.dataset.colIndex;
+        const pop = document.querySelector(`.filter-popover[data-col-index="${colIndex}"]`);
+
+        // 열기 전에 UI 구성
+        buildFilterUI(colIndex);
+
+        // 다른 팝업 닫고, 현재 토글
+        const isOpen = pop.style.display === "block";
+        closeAllPopovers();
+        pop.style.display = isOpen ? "none" : "block";
+      });
+    });
+
+    // 바깥 클릭하면 닫힘
+    document.addEventListener("click", () => {
+      closeAllPopovers();
+    });
+
+  })();
+</script>
 
 {% endif %}
 {% endblock %}
